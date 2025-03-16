@@ -3,16 +3,13 @@ from tkinter import scrolledtext, messagebox
 from datetime import datetime
 import re
 from thread_manager.manager import set_stop_flag
-from handle_data.data import search_client
+from handle_data.data import search_client, add_client
 
 # List of country codes
 country_codes = [
     "+1 (USA, Canada, Puerto Rico)",
     "+507 (Panama)",
     "+58 (Venezuela)",
-    "+44 (United Kingdom)",
-    "+33 (France)",
-    # Add more as needed
 ]
 
 # **Helper Functions for Widget Creation**
@@ -20,9 +17,19 @@ def create_label(parent, text, **kwargs):
     return tk.Label(parent, text=text, background='#2b2b2b', foreground='#e0e0e0', **kwargs)
 
 def create_entry(parent, **kwargs):
-    return tk.Entry(parent, background='#3c3c3c', foreground='#e0e0e0', insertbackground='#e0e0e0',
-                    highlightthickness=1, highlightbackground='#2b2b2b', highlightcolor='#4d4d4d',
-                    selectbackground='#4d4d4d', selectforeground='#e0e0e0', relief='flat', **kwargs)
+    return tk.Entry(parent, 
+                    background='#3c3c3c', 
+                    foreground='#e0e0e0', 
+                    insertbackground='#e0e0e0',
+                    highlightthickness=1, 
+                    highlightbackground='#2b2b2b', 
+                    highlightcolor='#4d4d4d',
+                    selectbackground='#4d4d4d', 
+                    selectforeground='#e0e0e0', 
+                    relief='flat',
+                    disabledbackground='#5e5e5e',  # Disabled background
+                    disabledforeground='#a0a0a0',   # Disabled text color
+                    **kwargs)
 
 def create_button(parent, text, command, **kwargs):
     return tk.Button(parent, text=text, command=command, background='#424242', foreground='#e0e0e0',
@@ -30,9 +37,16 @@ def create_button(parent, text, command, **kwargs):
 
 def create_option_menu(parent, variable, options, **kwargs):
     option_menu = tk.OptionMenu(parent, variable, *options, **kwargs)
-    option_menu.configure(background='#3c3c3c', foreground='#e0e0e0', activebackground='#4d4d4d', activeforeground='#e0e0e0')
+    option_menu.configure(background='#3c3c3c', 
+                          foreground='#e0e0e0', 
+                          activebackground='#4d4d4d', 
+                          activeforeground='#e0e0e0',
+                          disabledforeground='#a0a0a0')  # Disabled text color
     menu = option_menu["menu"]
-    menu.configure(background='#3c3c3c', foreground='#e0e0e0', activebackground='#4d4d4d', activeforeground='#e0e0e0')
+    menu.configure(background='#3c3c3c', 
+                   foreground='#e0e0e0', 
+                   activebackground='#4d4d4d', 
+                   activeforeground='#e0e0e0')
     return option_menu
 
 # **Phone Number Formatting Functions**
@@ -75,7 +89,7 @@ def main_tk(logo_path):
     root = tk.Tk()
     root.title("Soler Realty NYC")
     root.iconbitmap(logo_path)
-    root.geometry("730x610")
+    root.geometry("730x640")
     root.maxsize(1000, 800)
     root.configure(background='#2b2b2b')
 
@@ -146,8 +160,8 @@ def main_tk(logo_path):
     entry_email = create_entry(client_info_frame, width=40)
     entry_email.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
 
-    # Search Button
-    search_button = create_button(client_info_frame, "Search Client", lambda: search_and_update())
+    # Check Button
+    search_button = create_button(client_info_frame, "Check Client", lambda: search_and_update())
     search_button.grid(row=4, column=2, padx=5, pady=5, sticky="e")
 
     # **Inquiry Details Frame**
@@ -232,8 +246,16 @@ def main_tk(logo_path):
 
     country_code_var.trace_add("write", on_country_code_change)
 
+
     def search_and_update():
         nonlocal current_comments
+        # Temporarily enable fields to capture current input
+        entry_fullname.config(state='normal')
+        country_dropdown.config(state='normal')
+        entry_phone.config(state='normal')
+        entry_email.config(state='normal')
+        
+        # Get current values
         full_name_val = entry_fullname.get().strip()
         selected_country = country_code_var.get()
         country_code = selected_country.split()[0]
@@ -255,27 +277,18 @@ def main_tk(logo_path):
             for cc in country_codes:
                 code = cc.split()[0]
                 if full_phone.startswith(code):
-                    # Prevent formatting trigger during update
                     global setting_programmatically
                     setting_programmatically = True
-                    
-                    # Set country code dropdown
                     country_code_var.set(cc)
-                    
-                    # Extract local number and format
                     local_phone = full_phone[len(code):]
                     formatter = formatters.get(code, lambda x: x)
                     formatted_phone = formatter(local_phone)
-                    
-                    # Update phone entry directly
-                    phone_var.set(formatted_phone)  # Use StringVar instead of widget insert
-                    
+                    phone_var.set(formatted_phone)
                     setting_programmatically = False
                     matched = True
                     break
             
             if not matched:
-                # Fallback for unknown country codes
                 setting_programmatically = True
                 country_code_var.set(country_codes[0])
                 phone_var.set(full_phone)
@@ -284,12 +297,18 @@ def main_tk(logo_path):
             # Update other fields
             inquiry_type_var.set(client.get("inquiryType", "Rent"))
             entry_property.delete(0, tk.END)
-            entry_property.insert(0, client.get("propertyOfInterest", ""))
+            entry_property.insert(0, client.get("propertyOfInterest") or "")
             payment = client.get("paymentMethod")
             payment_method_var.set(payment if payment is not None else "Cash")
             entry_urgency.delete(0, tk.END)
-            entry_urgency.insert(0, client.get("urgency") or "")
+            entry_urgency.insert(0, client.get("urgency") or "")  # And here
             
+            # Disable fields to prevent editing
+            entry_fullname.config(state='disabled')
+            country_dropdown.config(state='disabled')
+            entry_phone.config(state='disabled')
+            entry_email.config(state='disabled')
+
             # Handle comments
             current_comments = client.get("comments") or []
             dates = [c.get("date", "") for c in current_comments if c.get("date")]
@@ -300,9 +319,57 @@ def main_tk(logo_path):
                 menu.add_command(label=d, command=lambda date=d: comment_date_var.set(date))
             comment_date_var.set(dates[-1] if dates else "")
             update_comment_text()
-            
+                
         else:
-            print("Client not found.")
+            # Get current values to check mandatory fields
+            full_name_val = entry_fullname.get().strip()
+            phone_digits = ''.join(filter(str.isdigit, entry_phone.get()))
+            email_val = entry_email.get().strip()
+
+            # Check mandatory fields
+            if not full_name_val or not phone_digits or not email_val:
+                messagebox.showerror(
+                    "Missing Information",
+                    "Full Name, Phone Number, and Email are required to add a new client.",
+                    parent=root
+                )
+                return
+
+            # Prompt to add new client
+            add_new = messagebox.askyesno(
+                "Client Not Found",
+                "Are you sure you want to add this new contact to the database?",
+                parent=root
+            )
+            if add_new:
+                country_code = country_code_var.get().split()[0]
+                phone = country_code + phone_digits
+                inquiry_type = inquiry_type_var.get()
+                property = entry_property.get().strip()
+                payment_method = payment_method_var.get()
+                urgency = entry_urgency.get().strip()
+                comment_text = text_comments.get("1.0", tk.END).strip()
+                comments = []
+                if comment_text:
+                    comments.append({
+                        "date": datetime.now().strftime("%Y-%m-%d"), 
+                        "comment": comment_text
+                    })
+
+                add_client(
+                    full_name=full_name_val,
+                    phone=phone,
+                    email=email_val,
+                    inquiry_type=inquiry_type,
+                    property_of_interest=property,
+                    payment_method=payment_method,
+                    urgency=urgency,
+                    comments=comments
+                )
+                messagebox.showinfo("Success", "Client added successfully.", parent=root)
+                # Search again to load the new client
+                search_and_update()
+            
 
     # **Update Comment Text Function**
     def update_comment_text(*args):

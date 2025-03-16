@@ -1,1 +1,1 @@
-from .data import get_data, search_client
+from .data import get_data, search_client, add_client
