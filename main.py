@@ -4,18 +4,19 @@ from audio import record_audio  # your recording module function
 from thread_manager.manager import main_thread, is_stop_flag_set  # Import the checker
 from gui.main_window import main_tk
 
+# --- Setup the recording directory ---
+project_root = Path(__file__).resolve().parent
+SAVE_DIR = project_root / "output"
+LOGO_PATH = project_root / "logo.ico"
+if not os.path.exists(SAVE_DIR):
+    os.makedirs(SAVE_DIR)
+
 # Create the Tk instance from the GUI module function
-root = main_tk()
+root = main_tk(LOGO_PATH)
 
 # Updated stop condition function: returns True if the stop_flag is set.
 def stop_recording():
     return is_stop_flag_set()
-
-# --- Setup the recording directory ---
-project_root = Path(__file__).resolve().parent
-SAVE_DIR = project_root / "output"
-if not os.path.exists(SAVE_DIR):
-    os.makedirs(SAVE_DIR)
 
 # --- Recording thread function ---
 def recording_thread_function():
@@ -39,7 +40,6 @@ root.after(100, check_recording_thread)
 
 # Run the GUI event loop in the main thread
 root.mainloop()
-
 
 # After the window is closed, get the data:
 client_data = getattr(root, 'client_data', None)
