@@ -161,7 +161,7 @@ def main_tk(logo_path):
     entry_email.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
 
     # Check Button
-    search_button = create_button(client_info_frame, "Check Client", lambda: search_and_update())
+    search_button = create_button(client_info_frame, "Submit", lambda: search_and_update())
     search_button.grid(row=4, column=2, padx=5, pady=5, sticky="e")
 
     # **Inquiry Details Frame**
