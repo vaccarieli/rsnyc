@@ -15,91 +15,111 @@ def search_client(*args):
                 return client
     return None
 
+# Helper functions for consistent widget styling
+def create_label(parent, text, **kwargs):
+    return tk.Label(parent, text=text, background='#2b2b2b', foreground='#e0e0e0', **kwargs)
+
+def create_entry(parent, **kwargs):
+    return tk.Entry(parent, background='#3c3c3c', foreground='#e0e0e0', insertbackground='#e0e0e0',
+                    highlightthickness=1, highlightbackground='#2b2b2b', highlightcolor='#4d4d4d',
+                    selectbackground='#4d4d4d', selectforeground='#e0e0e0', relief='flat', **kwargs)
+
+def create_button(parent, text, command, **kwargs):
+    return tk.Button(parent, text=text, command=command, background='#424242', foreground='#e0e0e0',
+                     activebackground='#5e5e5e', activeforeground='#e0e0e0', relief='flat', borderwidth=0, **kwargs)
+
+def create_option_menu(parent, variable, options, **kwargs):
+    option_menu = tk.OptionMenu(parent, variable, *options, **kwargs)
+    option_menu.configure(background='#3c3c3c', foreground='#e0e0e0', activebackground='#4d4d4d', activeforeground='#e0e0e0')
+    menu = option_menu["menu"]
+    menu.configure(background='#3c3c3c', foreground='#e0e0e0', activebackground='#4d4d4d', activeforeground='#e0e0e0')
+    return option_menu
+
 def main_tk(logo_path):
     root = tk.Tk()
     root.title("Soler Realty NYC")
     root.iconbitmap(logo_path)
+    root.geometry("730x610")
+    root.maxsize(1000, 800)
+    root.configure(background='#2b2b2b')  # Dark background for the main window
 
-    # Set an initial and maximum window size
-    root.geometry("800x600")  # Fits most screens comfortably
-    root.maxsize(1000, 800)   # Prevents the window from growing too large
-
-    # Variable for comments list
     current_comments = []
 
-    # Create a canvas and scrollbar for scrolling
-    canvas = tk.Canvas(root)
-    scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview)
+    # Canvas and scrollbar setup
+    canvas = tk.Canvas(root, background='#2b2b2b')
+    scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview, 
+                             background='#4d4d4d', troughcolor='#2b2b2b', activebackground='#5e5e5e')
     canvas.configure(yscrollcommand=scrollbar.set)
 
-    # Create a frame inside the canvas to hold the form
-    scrollable_frame = tk.Frame(canvas)
+    scrollable_frame = tk.Frame(canvas, background='#2b2b2b')
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    # Place the canvas and scrollbar in the window
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
     # --- Client Info Frame ---
-    client_info_frame = tk.Frame(scrollable_frame, relief="groove", borderwidth=2)
+    client_info_frame = tk.Frame(scrollable_frame, relief="groove", borderwidth=2, background='#2b2b2b')
     client_info_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
-    tk.Label(client_info_frame, text="Full Name:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
-    entry_fullname = tk.Entry(client_info_frame, width=40)
+    create_label(client_info_frame, "Full Name:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
+    entry_fullname = create_entry(client_info_frame, width=40)
     entry_fullname.grid(row=0, column=1, padx=5, pady=5)
 
-    tk.Label(client_info_frame, text="Phone Number:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
-    entry_phone = tk.Entry(client_info_frame, width=40)
+    create_label(client_info_frame, "Phone Number:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
+    entry_phone = create_entry(client_info_frame, width=40)
     entry_phone.grid(row=1, column=1, padx=5, pady=5)
 
-    tk.Label(client_info_frame, text="Email:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
-    entry_email = tk.Entry(client_info_frame, width=40)
+    create_label(client_info_frame, "Email:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
+    entry_email = create_entry(client_info_frame, width=40)
     entry_email.grid(row=2, column=1, padx=5, pady=5)
 
     # --- Inquiry Details Frame ---
-    inquiry_details_frame = tk.Frame(scrollable_frame, relief="groove", borderwidth=2)
+    inquiry_details_frame = tk.Frame(scrollable_frame, relief="groove", borderwidth=2, background='#2b2b2b')
     inquiry_details_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-    tk.Label(inquiry_details_frame, text="Inquiry Type (Rent/Buy/Sell):").grid(row=0, column=0, sticky='e', padx=5, pady=5)
+    create_label(inquiry_details_frame, "Inquiry Type (Rent/Buy/Sell):").grid(row=0, column=0, sticky='e', padx=5, pady=5)
     inquiry_type_var = tk.StringVar(root)
     inquiry_type_var.set("Rent")
     inquiry_options = ["Rent", "Buy", "Sell"]
-    inquiry_dropdown = tk.OptionMenu(inquiry_details_frame, inquiry_type_var, *inquiry_options)
+    inquiry_dropdown = create_option_menu(inquiry_details_frame, inquiry_type_var, inquiry_options)
     inquiry_dropdown.config(width=38)
     inquiry_dropdown.grid(row=0, column=1, padx=5, pady=5)
 
-    tk.Label(inquiry_details_frame, text="Specific Property (if applicable):").grid(row=1, column=0, sticky='e', padx=5, pady=5)
-    entry_property = tk.Entry(inquiry_details_frame, width=40)
+    create_label(inquiry_details_frame, "Specific Property (if applicable):").grid(row=1, column=0, sticky='e', padx=5, pady=5)
+    entry_property = create_entry(inquiry_details_frame, width=40)
     entry_property.grid(row=1, column=1, padx=5, pady=5)
 
-    tk.Label(inquiry_details_frame, text="Payment Method:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
+    create_label(inquiry_details_frame, "Payment Method:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
     payment_method_var = tk.StringVar(root)
     payment_method_var.set("Cash")
     payment_options = ["Cash", "Housing-Voucher", "Pre-approval (Sell)", "Other (Comment)"]
-    payment_dropdown = tk.OptionMenu(inquiry_details_frame, payment_method_var, *payment_options)
+    payment_dropdown = create_option_menu(inquiry_details_frame, payment_method_var, payment_options)
     payment_dropdown.config(width=38)
     payment_dropdown.grid(row=2, column=1, padx=5, pady=5)
 
-    tk.Label(inquiry_details_frame, text="Urgency/Timeline (for selling):").grid(row=3, column=0, sticky='e', padx=5, pady=5)
-    entry_urgency = tk.Entry(inquiry_details_frame, width=40)
+    create_label(inquiry_details_frame, "Urgency/Timeline (for selling):").grid(row=3, column=0, sticky='e', padx=5, pady=5)
+    entry_urgency = create_entry(inquiry_details_frame, width=40)
     entry_urgency.grid(row=3, column=1, padx=5, pady=5)
 
     # --- Comments Frame ---
-    comments_frame = tk.Frame(scrollable_frame, relief="groove", borderwidth=2)
+    comments_frame = tk.Frame(scrollable_frame, relief="groove", borderwidth=2, background='#2b2b2b')
     comments_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
     comments_frame.columnconfigure(0, weight=1)
     comments_frame.rowconfigure(1, weight=1)
 
-    tk.Label(comments_frame, text="Comments:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
+    create_label(comments_frame, "Comments:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
     comment_date_var = tk.StringVar(root)
     comment_date_var.set("")
-    comment_date_dropdown = tk.OptionMenu(comments_frame, comment_date_var, "")
+    comment_date_dropdown = create_option_menu(comments_frame, comment_date_var, [""])
     comment_date_dropdown.config(width=15)
     comment_date_dropdown.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
-    text_comments = scrolledtext.ScrolledText(comments_frame, width=80, height=10)
+    text_comments = scrolledtext.ScrolledText(comments_frame, width=80, height=10, background='#3c3c3c', foreground='#e0e0e0',
+                                              insertbackground='#e0e0e0', highlightthickness=1, highlightbackground='#2b2b2b',
+                                              highlightcolor='#4d4d4d', selectbackground='#4d4d4d', selectforeground='#e0e0e0')
     text_comments.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+    text_comments.vbar.configure(background='#4d4d4d', troughcolor='#2b2b2b', activebackground='#5e5e5e')
 
     # --- Buttons ---
     def search_and_update():
@@ -147,7 +167,7 @@ def main_tk(logo_path):
 
     comment_date_var.trace_add("write", update_comment_text)
 
-    search_button = tk.Button(client_info_frame, text="Search Client", command=search_and_update)
+    search_button = create_button(client_info_frame, "Search Client", search_and_update)
     search_button.grid(row=3, column=1, padx=5, pady=5, sticky="e")
 
     def on_submit():
@@ -166,7 +186,7 @@ def main_tk(logo_path):
         set_stop_flag()
         root.destroy()
 
-    submit_button = tk.Button(scrollable_frame, text="Continue", command=on_submit)
+    submit_button = create_button(scrollable_frame, "Continue", on_submit)
     submit_button.grid(row=3, column=0, pady=10, sticky="e")
 
     return root
