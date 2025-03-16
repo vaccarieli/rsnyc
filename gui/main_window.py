@@ -3,7 +3,7 @@ from tkinter import scrolledtext, messagebox
 from datetime import datetime
 import re
 from thread_manager.manager import set_stop_flag
-from handle_data.data import search_client, add_client
+from handle_data.data import search_client, add_client, get_data, write_json_file
 
 # List of country codes
 country_codes = [
@@ -27,8 +27,8 @@ def create_entry(parent, **kwargs):
                     selectbackground='#4d4d4d', 
                     selectforeground='#e0e0e0', 
                     relief='flat',
-                    disabledbackground='#5e5e5e',  # Disabled background
-                    disabledforeground='#a0a0a0',   # Disabled text color
+                    disabledbackground='#5e5e5e',
+                    disabledforeground='#a0a0a0',
                     **kwargs)
 
 def create_button(parent, text, command, **kwargs):
@@ -41,7 +41,7 @@ def create_option_menu(parent, variable, options, **kwargs):
                           foreground='#e0e0e0', 
                           activebackground='#4d4d4d', 
                           activeforeground='#e0e0e0',
-                          disabledforeground='#a0a0a0')  # Disabled text color
+                          disabledforeground='#a0a0a0')
     menu = option_menu["menu"]
     menu.configure(background='#3c3c3c', 
                    foreground='#e0e0e0', 
@@ -73,15 +73,12 @@ def format_venezuela_phone_number(input_str):
     else:
         return f"{digits[:3]}-{digits[3:]}"
 
-# Dictionary mapping country codes to formatting functions
 formatters = {
     "+1": format_us_phone_number,
     "+507": format_panama_phone_number,
     "+58": format_venezuela_phone_number,
-    # Add more formatters for other codes if needed
 }
 
-# Define setting_programmatically at module level
 setting_programmatically = False
 
 # **Main Tkinter Application Function**
@@ -114,33 +111,28 @@ def main_tk(logo_path):
     client_info_frame.columnconfigure(1, weight=1)
     client_info_frame.columnconfigure(2, weight=1)
 
-    # Full Name
     create_label(client_info_frame, "Full Name:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
     entry_fullname = create_entry(client_info_frame, width=40)
     entry_fullname.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
 
-    # Phone Number with Country Code Dropdown
     create_label(client_info_frame, "Phone Number:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
     country_code_var = tk.StringVar(root)
-    country_code_var.set(country_codes[0])  # Default to +1
+    country_code_var.set(country_codes[0])
     country_dropdown = create_option_menu(client_info_frame, country_code_var, country_codes)
     country_dropdown.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
-    # Phone number entry with StringVar for dynamic formatting
     phone_var = tk.StringVar()
     entry_phone = create_entry(client_info_frame, width=30, textvariable=phone_var)
     entry_phone.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
-    # Add validation for digits only
     def validate_phone_input(action, char):
-        if action == '1':  # Insertion
+        if action == '1':
             return char.isdigit()
-        return True  # Allow deletions and other actions
+        return True
 
     vcmd = root.register(validate_phone_input)
     entry_phone.config(validate='key', validatecommand=(vcmd, '%d', '%S'))
 
-    # Add paste handling to filter non-digits
     def handle_paste(event):
         try:
             clipboard = root.clipboard_get()
@@ -148,19 +140,16 @@ def main_tk(logo_path):
             entry_phone.insert(tk.INSERT, digits)
         except tk.TclError:
             pass
-        return "break"  # Prevent default paste behavior
+        return "break"
 
     entry_phone.bind("<Control-v>", handle_paste)
 
-    # Add a small label with instructions
     create_label(client_info_frame, "(Enter digits only)").grid(row=2, column=2, sticky='w', padx=5, pady=0)
 
-    # Email
     create_label(client_info_frame, "Email:").grid(row=3, column=0, sticky='e', padx=5, pady=5)
     entry_email = create_entry(client_info_frame, width=40)
     entry_email.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
 
-    # Check Button
     search_button = create_button(client_info_frame, "Submit", lambda: search_and_update())
     search_button.grid(row=4, column=2, padx=5, pady=5, sticky="e")
 
@@ -223,8 +212,8 @@ def main_tk(logo_path):
         if formatted != current_text:
             setting_programmatically = True
             phone_var.set(formatted)
-            root.update_idletasks()  # Ensure UI updates are processed
-            entry_phone.icursor(len(formatted))  # Move cursor to end
+            root.update_idletasks()
+            entry_phone.icursor(len(formatted))
             setting_programmatically = False
 
     entry_phone.bind("<KeyRelease>", on_key_release)
@@ -240,22 +229,19 @@ def main_tk(logo_path):
         formatted = formatter(digits)
         setting_programmatically = True
         phone_var.set(formatted)
-        root.update_idletasks()  # Ensure UI updates are processed
+        root.update_idletasks()
         entry_phone.icursor(len(formatted))
         setting_programmatically = False
 
     country_code_var.trace_add("write", on_country_code_change)
 
-
     def search_and_update():
         nonlocal current_comments
-        # Temporarily enable fields to capture current input
         entry_fullname.config(state='normal')
         country_dropdown.config(state='normal')
         entry_phone.config(state='normal')
         entry_email.config(state='normal')
         
-        # Get current values
         full_name_val = entry_fullname.get().strip()
         selected_country = country_code_var.get()
         country_code = selected_country.split()[0]
@@ -265,13 +251,11 @@ def main_tk(logo_path):
         client = search_client(full_name_val, phone_val, email_val)
         
         if client is not None:
-            # Update basic fields
             entry_fullname.delete(0, tk.END)
             entry_fullname.insert(0, client.get("fullName", ""))
             entry_email.delete(0, tk.END)
             entry_email.insert(0, client.get("email", ""))
 
-            # Handle phone number formatting
             full_phone = client.get("phone", "")
             matched = False
             for cc in country_codes:
@@ -294,22 +278,19 @@ def main_tk(logo_path):
                 phone_var.set(full_phone)
                 setting_programmatically = False
 
-            # Update other fields
             inquiry_type_var.set(client.get("inquiryType", "Rent"))
             entry_property.delete(0, tk.END)
             entry_property.insert(0, client.get("propertyOfInterest") or "")
             payment = client.get("paymentMethod")
             payment_method_var.set(payment if payment is not None else "Cash")
             entry_urgency.delete(0, tk.END)
-            entry_urgency.insert(0, client.get("urgency") or "")  # And here
-            
-            # Disable fields to prevent editing
+            entry_urgency.insert(0, client.get("urgency") or "")
+
             entry_fullname.config(state='disabled')
             country_dropdown.config(state='disabled')
             entry_phone.config(state='disabled')
             entry_email.config(state='disabled')
 
-            # Handle comments
             current_comments = client.get("comments") or []
             dates = [c.get("date", "") for c in current_comments if c.get("date")]
             dates.sort()
@@ -321,12 +302,10 @@ def main_tk(logo_path):
             update_comment_text()
                 
         else:
-            # Get current values to check mandatory fields
             full_name_val = entry_fullname.get().strip()
             phone_digits = ''.join(filter(str.isdigit, entry_phone.get()))
             email_val = entry_email.get().strip()
 
-            # Check mandatory fields
             if not full_name_val or not phone_digits or not email_val:
                 messagebox.showerror(
                     "Missing Information",
@@ -335,7 +314,6 @@ def main_tk(logo_path):
                 )
                 return
 
-            # Prompt to add new client
             add_new = messagebox.askyesno(
                 "Client Not Found",
                 "Are you sure you want to add this new contact to the database?",
@@ -367,11 +345,8 @@ def main_tk(logo_path):
                     comments=comments
                 )
                 messagebox.showinfo("Success", "Client added successfully.", parent=root)
-                # Search again to load the new client
                 search_and_update()
-            
 
-    # **Update Comment Text Function**
     def update_comment_text(*args):
         selected_date = comment_date_var.get()
         for comment in current_comments:
@@ -382,13 +357,14 @@ def main_tk(logo_path):
 
     comment_date_var.trace_add("write", update_comment_text)
 
-    # **Submit Function**
     def on_submit():
+        # Collect input data from GUI
         full_name = entry_fullname.get().strip()
         selected_country = country_code_var.get()
         phone_number = entry_phone.get().strip()
         email = entry_email.get().strip()
 
+        # Validate mandatory fields
         if not full_name or not phone_number or not email:
             exit_choice = messagebox.askyesno(
                 "Missing Information",
@@ -404,32 +380,84 @@ def main_tk(logo_path):
                 if confirm_exit:
                     set_stop_flag()
                     root.destroy()
-        else:
-            errors = []
-            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                errors.append("Email must be in a valid format (e.g., example@domain.com).")
-            if errors:
-                messagebox.showerror("Validation Error", "\n".join(errors), parent=root)
-            else:
-                comment_text = text_comments.get("1.0", tk.END).strip()
-                new_comment = {"date": datetime.now().strftime("%Y-%m-%d"), "comment": comment_text} if comment_text else {}
-                country_code = selected_country.split()[0]
-                digits = ''.join(filter(str.isdigit, phone_number))
-                full_phone_number = country_code + digits
-                root.client_data = {
-                    "Full Name": full_name,
-                    "Phone Number": full_phone_number,
-                    "Email": email,
-                    "Inquiry Type": inquiry_type_var.get(),
-                    "Specific Property": entry_property.get().strip(),
-                    "Payment Method": payment_method_var.get(),
-                    "Urgency/Timeline": entry_urgency.get().strip(),
-                    "Comments": [new_comment] if new_comment else []
-                }
-                set_stop_flag()
-                root.destroy()
+            return
 
-    # **Submit Button**
+        # Validate email format
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            messagebox.showerror("Validation Error", "Email must be in a valid format (e.g., example@domain.com).", parent=root)
+            return
+
+        # Get current values
+        country_code = selected_country.split()[0]
+        digits = ''.join(filter(str.isdigit, phone_number))
+        full_phone_number = country_code + digits
+        inquiry_type = inquiry_type_var.get()
+        property_interest = entry_property.get().strip()
+        payment_method = payment_method_var.get()
+        urgency = entry_urgency.get().strip()
+        comment_text = text_comments.get("1.0", tk.END).strip()
+
+        # Get today's date in "YYYY-MM-DD" format
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        # Search for existing client
+        client = search_client(full_name, full_phone_number, email)
+
+        # Get existing data
+        data = get_data()
+
+        if client:
+            # Update existing client
+            for c in data["clients"]:
+                if c["phone"] == full_phone_number:
+                    # Update basic client info
+                    c["fullName"] = full_name
+                    c["email"] = email
+                    c["inquiryType"] = inquiry_type
+                    c["propertyOfInterest"] = property_interest or None
+                    c["paymentMethod"] = payment_method.split()[0] if payment_method else None
+                    c["urgency"] = urgency or None
+                    
+                    # Handle comments
+                    if comment_text:
+                        # Remove any existing comment for today (ensures only one comment per date)
+                        c["comments"] = [comment for comment in c["comments"] if comment["date"] != today]
+                        # Add the new comment for today
+                        c["comments"].append({
+                            "date": today,
+                            "comment": comment_text
+                        })
+                    # If no comment_text, leave comments unchanged
+                    break
+        else:
+            # Add new client
+            new_client = {
+                "fullName": full_name,
+                "phone": full_phone_number,
+                "email": email,
+                "inquiryType": inquiry_type,
+                "propertyOfInterest": property_interest or None,
+                "paymentMethod": payment_method.split()[0] if payment_method else None,
+                "urgency": urgency or None,
+                "comments": [{
+                    "date": today,
+                    "comment": comment_text
+                }] if comment_text else []
+            }
+            data["clients"].append(new_client)
+
+        # Write updated data back to JSON file
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent
+        client_data_path = project_root / "data/clients.json"
+        write_json_file(client_data_path, data)
+
+        # Show success message
+        messagebox.showinfo("Success", "Client data updated successfully.", parent=root)
+
+        set_stop_flag()
+        root.destroy()
+
     submit_button = create_button(scrollable_frame, "Continue", on_submit)
     submit_button.grid(row=3, column=0, pady=10, sticky="e")
 
