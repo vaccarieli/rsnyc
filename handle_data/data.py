@@ -11,3 +11,14 @@ def read_json_file(file_path):
 
 def get_data():
     return read_json_file(client_data_path)
+
+def search_client(*args):
+    full_name, phone, email = args
+    data = get_data()
+    for client in data.get("clients", []):
+        if phone and client.get("phone") == phone:
+            return client
+        if not phone and full_name and email:
+            if client.get("fullName") == full_name and client.get("email") == email:
+                return client
+    return None
