@@ -238,7 +238,7 @@ def main_tk(logo_path):
         selected_country = country_code_var.get()
         country_code = selected_country.split()[0]
         digits = ''.join(filter(str.isdigit, entry_phone.get()))
-        phone_val = country_code + digits
+        phone_val = (country_code + digits) if digits else None
         email_val = entry_email.get().strip()
         client = search_client(full_name_val, phone_val, email_val)
         
