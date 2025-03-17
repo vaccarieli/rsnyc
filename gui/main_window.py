@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox
 from datetime import datetime
 import re
+from pathlib import Path
 from thread_manager.manager import set_stop_flag
 from handle_data.data import search_client, add_client, get_data, write_json_file
 
@@ -444,6 +445,7 @@ def main_tk(logo_path):
                         })
                     # If no comment_text, leave comments unchanged
                     break
+
         else:
             # Add new client
             new_client = {
@@ -460,9 +462,9 @@ def main_tk(logo_path):
                 }] if comment_text else []
             }
             data["clients"].append(new_client)
+            client = new_client
 
         # Write updated data back to JSON file
-        from pathlib import Path
         project_root = Path(__file__).parent.parent
         client_data_path = project_root / "data/clients.json"
         write_json_file(client_data_path, data)
@@ -470,6 +472,10 @@ def main_tk(logo_path):
         # Show success message
         messagebox.showinfo("Success", "Client data updated successfully.", parent=root)
 
+        # Send client info back to main.py
+        root.client_data = client
+
+        # Close the GUI
         set_stop_flag()
         root.destroy()
 

@@ -1,5 +1,16 @@
 import json
 from pathlib import Path
+import hashlib
+
+def hash_string(input_string, algorithm='sha256', encoding='utf-8'):
+
+    hash_object = hashlib.new(algorithm)
+    hash_object.update(input_string.encode(encoding))
+    return hash_object.hexdigest()
+
+def hash_data(string_data):
+    return hash_string(string_data)
+
 
 project_root = Path(__file__).parent.parent
 client_data_path = project_root / "data/clients.json"
@@ -52,3 +63,4 @@ def add_client(full_name, phone, email, inquiry_type,
     
     # Write updated data back to file
     write_json_file(client_data_path, data)
+

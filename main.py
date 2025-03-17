@@ -8,8 +8,7 @@ from gui.main_window import main_tk
 project_root = Path(__file__).resolve().parent
 SAVE_DIR = project_root / "output"
 LOGO_PATH = project_root / "logo.ico"
-if not os.path.exists(SAVE_DIR):
-    os.makedirs(SAVE_DIR)
+os.makedirs(SAVE_DIR, exist_ok=True)
 
 # Create the Tk instance from the GUI module function
 root = main_tk(LOGO_PATH)
@@ -20,8 +19,8 @@ def stop_recording():
 
 # --- Recording thread function ---
 def recording_thread_function():
-    # Start recording; record_audio will continuously poll stop_recording()
-    record_audio(SAVE_DIR, stop_recording)
+
+    record_audio(root, stop_recording)
 
 # Start the recording thread (non-daemon so we can join later)
 recording_thread = main_thread(target=recording_thread_function)
@@ -40,6 +39,10 @@ root.after(100, check_recording_thread)
 
 # Run the GUI event loop in the main thread
 root.mainloop()
+
+
+
+
 
 # Wait for the recording thread to finish before exiting the program
 recording_thread.join()

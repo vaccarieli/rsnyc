@@ -5,11 +5,37 @@ import os
 import datetime
 import warnings
 from soundcard import SoundcardRuntimeWarning
+from pathlib import Path
 
+# Suppress Soundcard warnings
 warnings.filterwarnings("ignore", category=SoundcardRuntimeWarning)
 
-def record_audio(save_dir, stop_recording, samplerate=48000, blocksize=2048):
-    """Record audio from loopback and microphone devices until stop_recording returns True."""
+# --- Setup the recording directory ---
+project_root = Path(__file__).resolve().parent.parent
+SAVE_DIR = project_root / "output"
+os.makedirs(SAVE_DIR, exist_ok=True)
+
+def get_unique_filename(base_path, filename):
+    """
+    Generate a unique filename by appending a counter if the file already exists.
+    
+    Args:
+        base_path (Path): Directory where the file will be saved
+        filename (str): Base filename (e.g., "call_20231015_123456.wav")
+    
+    Returns:
+        Path: Unique file path
+    """
+    path = base_path / filename
+    counter = 1
+    while path.exists():
+        name, ext = os.path.splitext(filename)
+        path = base_path / f"{name}_{counter}{ext}"
+        counter += 1
+    return path
+
+def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
+
     # List all available devices (including loopback devices)
     mics = sc.all_microphones(include_loopback=True)
     if len(mics) < 2:
@@ -38,10 +64,25 @@ def record_audio(save_dir, stop_recording, samplerate=48000, blocksize=2048):
     # Concatenate all recorded blocks
     audio = np.concatenate(frames, axis=0)
 
+    # Create save directory based on client phone number
+    try:
+        hashed_path_folder = SAVE_DIR / root.client_data["phone"]
+        hashed_path_folder.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        return # Skip saving if there's an error
+    
     # Create a timestamped filename
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    wav_filename = os.path.join(save_dir, f"call_{timestamp}.wav")
+    base_filename = f"call_{timestamp}.wav"
+    wav_filename = get_unique_filename(hashed_path_folder, base_filename)
 
-    # Save the combined audio to a WAV file
-    sf.write(wav_filename, audio, samplerate)
-    print(f"Recording saved as {wav_filename}")
+    # Save the combined audio to a WAV file with metadata and error handling
+    try:
+        with sf.SoundFile(wav_filename, 'w', samplerate=samplerate, channels=2, subtype='PCM_16') as f:
+            f.title = f"Call from {root.client_data['phone']} on {timestamp}"
+            f.comment = "Recorded using soundcard and soundfile"
+            f.write(audio)
+        print(f"Recording saved as {wav_filename}")
+    except Exception as e:
+        print(f"Error saving recording: {e}")
+
