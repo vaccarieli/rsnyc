@@ -366,10 +366,10 @@ def main_tk(logo_path):
                 search_and_update()
 
     def update_comment_text(*args):
+        text_comments.delete("1.0", tk.END)  # Clear the text area first
         selected_date = comment_date_var.get()
         for comment in current_comments:
             if comment.get("date") == selected_date:
-                text_comments.delete("1.0", tk.END)
                 text_comments.insert("1.0", comment.get("comment", ""))
                 break
 
@@ -478,7 +478,7 @@ def main_tk(logo_path):
         set_stop_flag()
         root.destroy()
 
-    submit_button = create_button(scrollable_frame, "Continue", on_submit)
+    submit_button = create_button(scrollable_frame, "Wrap-Up", on_submit)
     submit_button.grid(row=3, column=0, pady=10, sticky="e")
 
     return root
