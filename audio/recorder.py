@@ -62,7 +62,7 @@ def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
         return # Skip saving if there's an error
     
     # Create a timestamped filename
-    timestamp = datetime.datetime.now().strftime("%m%d%Y_%H%M%S")
+    timestamp = datetime.datetime.now().strftime("%m-%d-%Y_%H%M%S")
     base_filename = f"call_{timestamp}.wav"
     wav_filename = get_unique_filename(hashed_path_folder, base_filename)
 
@@ -72,7 +72,6 @@ def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
             f.title = f"Call from {root.client_data['phone']} on {timestamp}"
             f.comment = "Recorded using soundcard and soundfile"
             f.write(audio)
-        print(f"Recording saved as {wav_filename}")
     except Exception as e:
         print(f"Error saving recording: {e}")
 

@@ -82,8 +82,7 @@ formatters = {
 
 setting_programmatically = False
 
-current_date = datetime.now()
-formatted_date = f"{current_date:%b} {current_date.day}, {current_date:%Y}"
+formatted_date = datetime.now().strftime("%m-%d-%Y")
 
 # **Main Tkinter Application Function**
 def main_tk(logo_path):
