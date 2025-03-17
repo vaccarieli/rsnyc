@@ -81,6 +81,9 @@ formatters = {
 
 setting_programmatically = False
 
+current_date = datetime.now()
+formatted_date = f"{current_date:%b} {current_date.day}, {current_date:%Y}"
+
 # **Main Tkinter Application Function**
 def main_tk(logo_path):
     root = tk.Tk()
@@ -307,6 +310,9 @@ def main_tk(logo_path):
             dates.sort()
             menu = comment_date_dropdown["menu"]
             menu.delete(0, "end")
+            if formatted_date not in dates:
+                dates.append(formatted_date)
+
             for d in dates:
                 menu.add_command(label=d, command=lambda date=d: comment_date_var.set(date))
             comment_date_var.set(dates[-1] if dates else "")
@@ -339,9 +345,10 @@ def main_tk(logo_path):
                 urgency = entry_urgency.get().strip()
                 comment_text = text_comments.get("1.0", tk.END).strip()
                 comments = []
+
                 if comment_text:
                     comments.append({
-                        "date": datetime.now().strftime("%Y-%m-%d"), 
+                        "date": formatted_date, 
                         "comment": comment_text
                     })
 
@@ -408,9 +415,6 @@ def main_tk(logo_path):
         urgency = entry_urgency.get().strip()
         comment_text = text_comments.get("1.0", tk.END).strip()
 
-        # Get today's date in "YYYY-MM-DD" format
-        today = datetime.now().strftime("%Y-%m-%d")
-
         # Search for existing client
         client = search_client(full_name, full_phone_number, email)
 
@@ -432,10 +436,10 @@ def main_tk(logo_path):
                     # Handle comments
                     if comment_text:
                         # Remove any existing comment for today (ensures only one comment per date)
-                        c["comments"] = [comment for comment in c["comments"] if comment["date"] != today]
+                        c["comments"] = [comment for comment in c["comments"] if comment["date"] != formatted_date]
                         # Add the new comment for today
                         c["comments"].append({
-                            "date": today,
+                            "date": formatted_date,
                             "comment": comment_text
                         })
                     # If no comment_text, leave comments unchanged
@@ -451,7 +455,7 @@ def main_tk(logo_path):
                 "paymentMethod": payment_method.split()[0] if payment_method else None,
                 "urgency": urgency or None,
                 "comments": [{
-                    "date": today,
+                    "date": formatted_date,
                     "comment": comment_text
                 }] if comment_text else []
             }
