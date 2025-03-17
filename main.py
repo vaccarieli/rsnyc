@@ -41,12 +41,5 @@ root.after(100, check_recording_thread)
 # Run the GUI event loop in the main thread
 root.mainloop()
 
-# After the window is closed, get the data:
-client_data = getattr(root, 'client_data', None)
-if client_data:
-    print("Data retrieved in main script:", client_data)
-else:
-    print("No client data was submitted.")
-
 # Wait for the recording thread to finish before exiting the program
 recording_thread.join()

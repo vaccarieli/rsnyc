@@ -90,6 +90,17 @@ def main_tk(logo_path):
     root.maxsize(1000, 800)
     root.configure(background='#2b2b2b')
 
+    def on_closing():
+        if messagebox.askyesno(
+            "Confirm Exit",
+            "Are you sure you want to close the application? Any unsaved changes will be lost.",
+            parent=root
+        ):
+            set_stop_flag()
+            root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+
     current_comments = []
 
     # **Canvas and Scrollbar Setup**
