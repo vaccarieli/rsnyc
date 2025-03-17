@@ -60,7 +60,6 @@ def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
         hashed_path_folder = SAVE_DIR / (root.client_data["fullName"].title() + " " + root.client_data["phone"])
         hashed_path_folder.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        print_exc()
         return # Skip saving if there's an error
     
     # Create a timestamped filename

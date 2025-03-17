@@ -5,6 +5,14 @@ import re
 from pathlib import Path
 from thread_manager.manager import set_stop_flag
 from handle_data.data import search_client, add_client, get_data, write_json_file
+from dotenv import load_dotenv
+from jotform import JotformAPIClient
+import os
+
+load_dotenv()
+
+JOTFORM_API = os.getenv("JOTFORM_API")
+JOTFORM_ID = os.getenv("JOTFORM_ID")
 
 # List of country codes
 country_codes = [
@@ -375,6 +383,11 @@ def main_tk(logo_path):
 
     comment_date_var.trace_add("write", update_comment_text)
 
+    def send_form():
+
+        print("Form was sent!")
+
+
     def on_submit():
         # Collect input data from GUI
         full_name = entry_fullname.get().strip()
@@ -463,13 +476,27 @@ def main_tk(logo_path):
             data["clients"].append(new_client)
             client = new_client
 
+        confirm_exit = messagebox.askyesno(
+                "Confirm Exit",
+                "Finish the call and exit?",
+                parent=root
+            )
+        
+        if not confirm_exit:
+            return
+        
+        confirm_exit = messagebox.askyesno(
+                "Wrap-Up",
+                "Are you Sure?",
+                parent=root
+            )
+        if not confirm_exit:
+            return
+
         # Write updated data back to JSON file
         project_root = Path(__file__).parent.parent
         client_data_path = project_root / "data/clients.json"
         write_json_file(client_data_path, data)
-
-        # Show success message
-        messagebox.showinfo("Success", "Client data updated successfully.", parent=root)
 
         # Send client info back to main.py
         root.client_data = client
@@ -478,7 +505,12 @@ def main_tk(logo_path):
         set_stop_flag()
         root.destroy()
 
+    # Existing Wrap-Up button
     submit_button = create_button(scrollable_frame, "Wrap-Up", on_submit)
     submit_button.grid(row=3, column=0, pady=10, sticky="e")
+
+    # Add Send Form button
+    send_form_button = create_button(scrollable_frame, "Send Form", send_form)
+    send_form_button.grid(row=3, column=0, pady=10, padx=(0, 90), sticky="e")  # Adjusted padx to position it left of Wrap-Up
 
     return root
