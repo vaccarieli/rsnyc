@@ -16,16 +16,6 @@ SAVE_DIR = project_root / "output"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 def get_unique_filename(base_path, filename):
-    """
-    Generate a unique filename by appending a counter if the file already exists.
-    
-    Args:
-        base_path (Path): Directory where the file will be saved
-        filename (str): Base filename (e.g., "call_20231015_123456.wav")
-    
-    Returns:
-        Path: Unique file path
-    """
     path = base_path / filename
     counter = 1
     while path.exists():
@@ -72,7 +62,7 @@ def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
         return # Skip saving if there's an error
     
     # Create a timestamped filename
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.datetime.now().strftime("%m%d%Y_%H%M%S")
     base_filename = f"call_{timestamp}.wav"
     wav_filename = get_unique_filename(hashed_path_folder, base_filename)
 
