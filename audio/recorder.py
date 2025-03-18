@@ -66,6 +66,7 @@ def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
     timestamp = datetime.datetime.now().strftime("%m-%d-%Y_%H%M%S")
     base_filename = f"call_{timestamp}.wav"
     wav_filename = get_unique_filename(hashed_path_folder, base_filename)
+    root.wav_filename = str(wav_filename)
 
     # Save the combined audio to a WAV file with metadata and error handling
     try:
@@ -74,5 +75,6 @@ def record_audio(root, stop_recording, samplerate=48000, blocksize=2048):
             f.comment = "Recorded using soundcard and soundfile"
             f.write(audio)
     except Exception as e:
-        print(f"Error saving recording: {e}")
+        print_exc()
+
 

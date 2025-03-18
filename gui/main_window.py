@@ -25,6 +25,23 @@ country_codes = [
 def create_label(parent, text, **kwargs):
     return tk.Label(parent, text=text, background='#2b2b2b', foreground='#e0e0e0', **kwargs)
 
+def standardize_date(date_str):
+    """Convert a date string to MM-DD-YYYY format."""
+    if not date_str:
+        return date_str
+    try:
+        # Try parsing with different possible formats
+        for fmt in ("%m-%d-%Y", "%m/%d/%Y", "%m.%d.%Y", "%m %d %Y"):
+            try:
+                dt = datetime.strptime(date_str, fmt)
+                return dt.strftime("%m-%d-%Y")
+            except ValueError:
+                continue
+        # If parsing fails, return the original string (though ideally, log this)
+        return date_str
+    except Exception:
+        return date_str
+
 def create_entry(parent, **kwargs):
     return tk.Entry(parent, 
                     background='#3c3c3c', 
@@ -314,15 +331,18 @@ def main_tk(logo_path):
             entry_email.config(state='disabled')
 
             current_comments = client.get("comments") or []
-            dates = [c.get("date", "") for c in current_comments if c.get("date")]
-            dates.sort()
-            menu = comment_date_dropdown["menu"]
-            menu.delete(0, "end")
+            # Standardize dates and remove duplicates
+            dates = [standardize_date(c.get("date", "")) for c in current_comments if c.get("date")]
+            dates = list(set(dates))  # Remove duplicates after standardization
+            dates.sort()  # Sort in chronological order
             if formatted_date not in dates:
                 dates.append(formatted_date)
 
+            menu = comment_date_dropdown["menu"]
+            menu.delete(0, "end")
             for d in dates:
                 menu.add_command(label=d, command=lambda date=d: comment_date_var.set(date))
+            # Set to the latest date
             comment_date_var.set(dates[-1] if dates else "")
             update_comment_text()
                 
@@ -375,11 +395,13 @@ def main_tk(logo_path):
 
     def update_comment_text(*args):
         text_comments.delete("1.0", tk.END)  # Clear the text area first
-        selected_date = comment_date_var.get()
+        selected_date = comment_date_var.get()  # This is already standardized from the dropdown
+        if not selected_date:
+            return
         for comment in current_comments:
-            if comment.get("date") == selected_date:
-                text_comments.insert("1.0", comment.get("comment", ""))
-                break
+            std_date = standardize_date(comment.get("date", ""))
+            if std_date == selected_date:
+                text_comments.insert(tk.END, comment.get("comment", "") + "\n")
 
     comment_date_var.trace_add("write", update_comment_text)
 
@@ -427,6 +449,7 @@ def main_tk(logo_path):
         payment_method = payment_method_var.get()
         urgency = entry_urgency.get().strip()
         comment_text = text_comments.get("1.0", tk.END).strip()
+        selected_date = comment_date_var.get()  # Get the selected date from the dropdown
 
         # Search for existing client
         client = search_client(full_name, full_phone_number, email)
@@ -436,7 +459,7 @@ def main_tk(logo_path):
 
         if client:
             # Update existing client
-            for c in data["clients"]:
+            for c in data[full_phone_number]:
                 if c["phone"] == full_phone_number:
                     # Update basic client info
                     c["fullName"] = full_name
@@ -447,17 +470,23 @@ def main_tk(logo_path):
                     c["urgency"] = urgency or None
                     
                     # Handle comments
-                    if comment_text:
-                        # Remove any existing comment for today (ensures only one comment per date)
-                        c["comments"] = [comment for comment in c["comments"] if comment["date"] != formatted_date]
-                        # Add the new comment for today
-                        c["comments"].append({
-                            "date": formatted_date,
-                            "comment": comment_text
-                        })
-                    # If no comment_text, leave comments unchanged
+                    if comment_text and selected_date:
+                        # Check if a comment for the selected date exists
+                        comment_updated = False
+                        for comment in c["comments"]:
+                            if comment["date"] == selected_date:
+                                # Update the existing comment
+                                comment["comment"] = comment_text
+                                comment_updated = True
+                                break
+                        if not comment_updated:
+                            # If no comment exists for the selected date, add a new one
+                            c["comments"].append({
+                                "date": selected_date,
+                                "comment": comment_text
+                            })
+                    # If no comment_text or no selected_date, leave comments unchanged
                     break
-
         else:
             # Add new client
             new_client = {
@@ -468,43 +497,41 @@ def main_tk(logo_path):
                 "propertyOfInterest": property_interest or None,
                 "paymentMethod": payment_method.split()[0] if payment_method else None,
                 "urgency": urgency or None,
-                "comments": [{
-                    "date": formatted_date,
-                    "comment": comment_text
-                }] if comment_text else []
+                "comments": []
             }
-            data["clients"].append(new_client)
+            if comment_text and selected_date:
+                new_client["comments"].append({
+                    "date": selected_date,
+                    "comment": comment_text
+                })
+            data[full_phone_number].append(new_client)
             client = new_client
 
+        # Confirm submission and exit
         confirm_exit = messagebox.askyesno(
-                "Confirm Exit",
-                "Finish the call and exit?",
-                parent=root
-            )
-        
+            "Confirm Exit",
+            "Finish the call and exit?",
+            parent=root
+        )
         if not confirm_exit:
             return
         
         confirm_exit = messagebox.askyesno(
-                "Wrap-Up",
-                "Are you Sure?",
-                parent=root
-            )
+            "Wrap-Up",
+            "Are you Sure?",
+            parent=root
+        )
         if not confirm_exit:
             return
-
-        # Write updated data back to JSON file
-        project_root = Path(__file__).parent.parent
-        client_data_path = project_root / "data/clients.json"
-        write_json_file(client_data_path, data)
 
         # Send client info back to main.py
+        root.main_data = data
         root.client_data = client
+        root.full_phone_number = full_phone_number
 
         # Close the GUI
         set_stop_flag()
         root.destroy()
-
     # Existing Wrap-Up button
     submit_button = create_button(scrollable_frame, "Wrap-Up", on_submit)
     submit_button.grid(row=3, column=0, pady=10, sticky="e")

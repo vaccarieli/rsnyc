@@ -2,18 +2,14 @@ import json
 from pathlib import Path
 import hashlib
 
+project_root = Path(__file__).parent.parent
+client_data_path = project_root / "data/clients.json"
+
 def hash_string(input_string, algorithm='sha256', encoding='utf-8'):
 
     hash_object = hashlib.new(algorithm)
     hash_object.update(input_string.encode(encoding))
     return hash_object.hexdigest()
-
-def hash_data(string_data):
-    return hash_string(string_data)
-
-
-project_root = Path(__file__).parent.parent
-client_data_path = project_root / "data/clients.json"
 
 def read_json_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -30,7 +26,7 @@ def search_client(*args):
     # Existing search implementation
     full_name, phone, email = args
     data = get_data()
-    for client in data.get("clients", []):
+    for client in data.get(phone, []):
         if phone and client.get("phone") == phone:
             return client
         if not phone and full_name and email:
@@ -57,9 +53,11 @@ def add_client(full_name, phone, email, inquiry_type,
         "urgency": urgency.strip() or None,
         "comments": comments
     }
-    
+
+    if phone not in data:
+        data[phone] = []
     # Add to clients array
-    data["clients"].append(new_client)
+    data[phone].append(new_client)
     
     # Write updated data back to file
     write_json_file(client_data_path, data)
