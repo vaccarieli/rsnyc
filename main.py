@@ -77,7 +77,12 @@ root.mainloop()
 # Ensure recording thread completes before program exit
 if RECORD_CALL:
     recording_thread.join()
-    transcribed_audio_text = transcribe_audio(root.wav_filename)
+    
+    if root.language == "English":
+        transcribed_audio_text = transcribe_audio(root.wav_filename)
+    else:
+        transcribed_audio_text = transcribe_audio(root.wav_filename, "es-ES")  # Spanish transcription
+
     # Access client data
     client_data = root.main_data[root.full_phone_number][0]
     # Append transcription to today's comment

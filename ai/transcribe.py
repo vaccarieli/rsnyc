@@ -9,15 +9,15 @@ from dotenv import load_dotenv
 load_dotenv()
 DEEPGRAM_KEY = os.getenv("DEEPGRAM_KEY")
 
-def transcribe_audio(audio_file):
+def transcribe_audio(audio_file, language="en-US"):
     try:
         deepgram = DeepgramClient(DEEPGRAM_KEY)
         
         # Remove 'tier' and use current model name
         options = PrerecordedOptions(
-            model="nova-3",  # or "nova" if 403 persists
+            model="nova-2",  # or "nova" if 403 persists
             punctuate=True,
-            language="en-US"
+            language=language
         )
         
         with open(audio_file, "rb") as file:

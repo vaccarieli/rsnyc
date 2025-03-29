@@ -30,14 +30,12 @@ def standardize_date(date_str):
     if not date_str:
         return date_str
     try:
-        # Try parsing with different possible formats
         for fmt in ("%m-%d-%Y", "%m/%d/%Y", "%m.%d.%Y", "%m %d %Y"):
             try:
                 dt = datetime.strptime(date_str, fmt)
                 return dt.strftime("%m-%d-%Y")
             except ValueError:
                 continue
-        # If parsing fails, return the original string (though ideally, log this)
         return date_str
     except Exception:
         return date_str
@@ -106,7 +104,6 @@ formatters = {
 }
 
 setting_programmatically = False
-
 formatted_date = datetime.now().strftime("%m-%d-%Y")
 
 # **Main Tkinter Application Function**
@@ -131,7 +128,7 @@ def main_tk(logo_path):
 
     current_comments = []
 
-    # **Canvas and Scrollbar Setup**
+    # Canvas and Scrollbar Setup
     canvas = tk.Canvas(root, background='#2b2b2b')
     scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview,
                              background='#4d4d4d', troughcolor='#2b2b2b', activebackground='#5e5e5e')
@@ -188,6 +185,14 @@ def main_tk(logo_path):
     create_label(client_info_frame, "Email:").grid(row=3, column=0, sticky='e', padx=5, pady=5)
     entry_email = create_entry(client_info_frame, width=40)
     entry_email.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
+
+    # Add Language Spoken field
+    create_label(client_info_frame, "Language Spoken:").grid(row=4, column=0, sticky='e', padx=5, pady=5)
+    language_var = tk.StringVar(root)
+    language_var.set("English")
+    language_options = ["English", "Spanish"]
+    language_dropdown = create_option_menu(client_info_frame, language_var, language_options)
+    language_dropdown.grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
     search_button = create_button(client_info_frame, "Submit", lambda: search_and_update())
     search_button.grid(row=4, column=2, padx=5, pady=5, sticky="e")
@@ -324,6 +329,7 @@ def main_tk(logo_path):
             payment_method_var.set(payment if payment is not None else "Cash")
             entry_urgency.delete(0, tk.END)
             entry_urgency.insert(0, client.get("urgency") or "")
+            language_var.set(client.get("language", "English"))  # Set language
 
             entry_fullname.config(state='disabled')
             country_dropdown.config(state='disabled')
@@ -331,10 +337,9 @@ def main_tk(logo_path):
             entry_email.config(state='disabled')
 
             current_comments = client.get("comments") or []
-            # Standardize dates and remove duplicates
             dates = [standardize_date(c.get("date", "")) for c in current_comments if c.get("date")]
-            dates = list(set(dates))  # Remove duplicates after standardization
-            dates.sort()  # Sort in chronological order
+            dates = list(set(dates))
+            dates.sort()
             if formatted_date not in dates:
                 dates.append(formatted_date)
 
@@ -342,7 +347,6 @@ def main_tk(logo_path):
             menu.delete(0, "end")
             for d in dates:
                 menu.add_command(label=d, command=lambda date=d: comment_date_var.set(date))
-            # Set to the latest date
             comment_date_var.set(dates[-1] if dates else "")
             update_comment_text()
                 
@@ -388,14 +392,15 @@ def main_tk(logo_path):
                     property_of_interest=property,
                     payment_method=payment_method,
                     urgency=urgency,
-                    comments=comments
+                    comments=comments,
+                    language=language_var.get()  # Add language
                 )
                 messagebox.showinfo("Success", "Client added successfully.", parent=root)
                 search_and_update()
 
     def update_comment_text(*args):
-        text_comments.delete("1.0", tk.END)  # Clear the text area first
-        selected_date = comment_date_var.get()  # This is already standardized from the dropdown
+        text_comments.delete("1.0", tk.END)
+        selected_date = comment_date_var.get()
         if not selected_date:
             return
         for comment in current_comments:
@@ -406,18 +411,14 @@ def main_tk(logo_path):
     comment_date_var.trace_add("write", update_comment_text)
 
     def send_form():
-
         print("Form was sent!")
 
-
     def on_submit():
-        # Collect input data from GUI
         full_name = entry_fullname.get().strip()
         selected_country = country_code_var.get()
         phone_number = entry_phone.get().strip()
         email = entry_email.get().strip()
 
-        # Validate mandatory fields
         if not full_name or not phone_number or not email:
             exit_choice = messagebox.askyesno(
                 "Missing Information",
@@ -435,12 +436,10 @@ def main_tk(logo_path):
                     root.destroy()
             return
 
-        # Validate email format
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             messagebox.showerror("Validation Error", "Email must be in a valid format (e.g., example@domain.com).", parent=root)
             return
 
-        # Get current values
         country_code = selected_country.split()[0]
         digits = ''.join(filter(str.isdigit, phone_number))
         full_phone_number = country_code + digits
@@ -449,46 +448,37 @@ def main_tk(logo_path):
         payment_method = payment_method_var.get()
         urgency = entry_urgency.get().strip()
         comment_text = text_comments.get("1.0", tk.END).strip()
-        selected_date = comment_date_var.get()  # Get the selected date from the dropdown
+        selected_date = comment_date_var.get()
+        language = language_var.get()  # Get language
 
-        # Search for existing client
         client = search_client(full_name, full_phone_number, email)
-
-        # Get existing data
         data = get_data()
 
         if client:
-            # Update existing client
             for c in data[full_phone_number]:
                 if c["phone"] == full_phone_number:
-                    # Update basic client info
                     c["fullName"] = full_name
                     c["email"] = email
                     c["inquiryType"] = inquiry_type
                     c["propertyOfInterest"] = property_interest or None
                     c["paymentMethod"] = payment_method.split()[0] if payment_method else None
                     c["urgency"] = urgency or None
+                    c["language"] = language  # Update language
                     
-                    # Handle comments
                     if comment_text and selected_date:
-                        # Check if a comment for the selected date exists
                         comment_updated = False
                         for comment in c["comments"]:
                             if comment["date"] == selected_date:
-                                # Update the existing comment
                                 comment["comment"] = comment_text
                                 comment_updated = True
                                 break
                         if not comment_updated:
-                            # If no comment exists for the selected date, add a new one
                             c["comments"].append({
                                 "date": selected_date,
                                 "comment": comment_text
                             })
-                    # If no comment_text or no selected_date, leave comments unchanged
                     break
         else:
-            # Add new client
             new_client = {
                 "fullName": full_name,
                 "phone": full_phone_number,
@@ -497,7 +487,8 @@ def main_tk(logo_path):
                 "propertyOfInterest": property_interest or None,
                 "paymentMethod": payment_method.split()[0] if payment_method else None,
                 "urgency": urgency or None,
-                "comments": []
+                "comments": [],
+                "language": language  # Add language
             }
             if comment_text and selected_date:
                 new_client["comments"].append({
@@ -507,7 +498,6 @@ def main_tk(logo_path):
             data[full_phone_number].append(new_client)
             client = new_client
 
-        # Confirm submission and exit
         confirm_exit = messagebox.askyesno(
             "Confirm Exit",
             "Finish the call and exit?",
@@ -524,20 +514,18 @@ def main_tk(logo_path):
         if not confirm_exit:
             return
 
-        # Send client info back to main.py
         root.main_data = data
         root.client_data = client
         root.full_phone_number = full_phone_number
+        root.language = language
 
-        # Close the GUI
         set_stop_flag()
         root.destroy()
-    # Existing Wrap-Up button
+
     submit_button = create_button(scrollable_frame, "Wrap-Up", on_submit)
     submit_button.grid(row=3, column=0, pady=10, sticky="e")
 
-    # Add Send Form button
     send_form_button = create_button(scrollable_frame, "Send Form", send_form)
-    send_form_button.grid(row=3, column=0, pady=10, padx=(0, 90), sticky="e")  # Adjusted padx to position it left of Wrap-Up
+    send_form_button.grid(row=3, column=0, pady=10, padx=(0, 90), sticky="e")
 
     return root

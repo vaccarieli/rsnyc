@@ -35,14 +35,11 @@ def search_client(*args):
     return None
 
 def add_client(full_name, phone, email, inquiry_type, 
-              property_of_interest, payment_method, urgency, comments):
-    # Get existing data
+              property_of_interest, payment_method, urgency, comments, language):
     data = get_data()
     
-    # Process payment method to extract key (e.g., "Cash" from "Cash (Rent/Buy)")
     payment_key = payment_method.split()[0] if payment_method else None
     
-    # Create new client object matching JSON structure
     new_client = {
         "fullName": full_name.strip(),
         "phone": phone,
@@ -51,14 +48,13 @@ def add_client(full_name, phone, email, inquiry_type,
         "propertyOfInterest": property_of_interest.strip() or None,
         "paymentMethod": payment_key,
         "urgency": urgency.strip() or None,
-        "comments": comments
+        "comments": comments,
+        "language": language  # Added language field
     }
 
     if phone not in data:
         data[phone] = []
-    # Add to clients array
     data[phone].append(new_client)
     
-    # Write updated data back to file
     write_json_file(client_data_path, data)
 
